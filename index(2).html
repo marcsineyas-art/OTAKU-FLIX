@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#100b1e"><title>OTAKU FLIX</title>
+<style>
+:root{--bg:#100b1e;--panel:#1b1230;--purple:#9b5cff;--pink:#ff4fa3;--muted:#b9abc9}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% -10%,#44216b 0,transparent 38%),var(--bg);color:#fff;font-family:Arial,sans-serif}
+header{padding:18px 5%;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #ffffff18;background:#100b1eee;position:sticky;top:0;z-index:2}
+.logo{font-size:23px;font-weight:900}.logo span{color:var(--purple)}button{border:0;border-radius:11px;padding:11px 15px;background:linear-gradient(90deg,var(--purple),var(--pink));color:#fff;font-weight:bold;cursor:pointer}
+main{padding:24px 5% 50px}.hero{min-height:240px;border-radius:22px;padding:28px;display:flex;align-items:end;background:linear-gradient(90deg,#140b24 5%,#160d26bb 65%,transparent),linear-gradient(0deg,#100b1e,transparent 70%),url('https://images.unsplash.com/photo-1578632767115-351de808f9ee?auto=format&fit=crop&w=1200&q=80') center/cover}
+.hero h1{font-size:clamp(30px,6vw,48px);margin:10px 0}.hero p{max-width:480px;color:#eee;line-height:1.5}
+.tools{display:flex;gap:10px;margin:24px 0;flex-wrap:wrap}.tools input,.tools select,input{background:var(--panel);border:1px solid #ffffff25;border-radius:10px;padding:12px;color:#fff}.tools input{flex:1;min-width:180px}
+h2{font-size:21px;margin:28px 0 14px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid #ffffff15;border-radius:15px;overflow:hidden}.poster{height:170px;display:grid;place-items:center;font-size:42px;background:linear-gradient(135deg,#48256b,#171126)}.info{padding:11px}.info small{color:var(--muted)}
+dialog{background:#1b1230;color:white;border:1px solid #ffffff35;border-radius:17px;width:min(92%,480px);padding:22px}dialog::backdrop{background:#000b}dialog input{width:100%;margin:7px 0 13px}label{font-size:14px;color:#d9c9eb}.muted{color:var(--muted);font-size:13px}.row{display:flex;gap:8px;flex-wrap:wrap}.avatar{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid var(--purple)}
+footer{padding:22px 5%;color:var(--muted);border-top:1px solid #ffffff18;font-size:12px}
+</style>
+</head>
+<body>
+<header><div class="logo">OTAKU <span>FLIX</span></div><div class="row"><span id="userlabel" class="muted">Non connecté</span><button id="authopen">Connexion</button><button id="logout" hidden>Déconnexion</button></div></header>
+<main>
+<section class="hero"><div><small style="color:#d8baff;letter-spacing:2px">TON UNIVERS ANIME</small><h1>Vis tes passions.<br>Épisode après épisode.</h1><p>Découvre et organise tes anime préférés dans un espace conçu pour les otaku.</p><button onclick="document.querySelector('#catalogue').scrollIntoView({behavior:'smooth'})">Explorer les anime</button></div></section>
+<div class="tools"><input id="search" placeholder="Rechercher un anime…" aria-label="Rechercher un anime"><select id="genre"><option value="">Tous les genres</option><option>Action</option><option>Aventure</option><option>Fantaisie</option><option>Sport</option></select></div>
+<h2 id="catalogue">Catalogue anime</h2><section class="grid" id="grid"></section>
+<h2>Mes favoris ❤️</h2><section class="grid" id="favorites"><p class="muted">Connecte-toi pour gérer tes favoris.</p></section>
+</main>
+<footer>OTAKU FLIX — Les vidéos doivent provenir de sources que tu as le droit de diffuser. Catalogue de démonstration.</footer>
+
+<dialog id="authdlg"><button style="float:right" onclick="authdlg.close()">Fermer</button><h2>Compte OTAKU FLIX</h2>
+<p class="muted">Utilise ton adresse e-mail et un mot de passe d'au moins 8 caractères.</p>
+<label for="email">Adresse e-mail</label><input id="email" type="email" autocomplete="email" placeholder="toi@exemple.com">
+<label for="password">Mot de passe</label><input id="password" type="password" autocomplete="current-password" minlength="8" placeholder="8 caractères minimum">
+<div class="row"><button id="signup">Créer un compte</button><button id="signin">Se connecter</button></div><p id="authmsg" class="muted" aria-live="polite"></p>
+</dialog>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+// Remplace ces valeurs par la configuration de TON projet Firebase.
+const firebaseConfig = {
+  apiKey: "REMPLACER_API_KEY",
+  authDomain: "REMPLACER_PROJECT.firebaseapp.com",
+  projectId: "REMPLACER_PROJECT_ID",
+  appId: "REMPLACER_APP_ID"
+};
+const configured = !Object.values(firebaseConfig).some(v => String(v).startsWith("REMPLACER"));
+let auth = null;
+if (configured) auth = getAuth(initializeApp(firebaseConfig));
+
+const anime=[
+{name:"Naruto",genre:"Action",emoji:"🍥"},{name:"One Piece",genre:"Aventure",emoji:"🏴‍☠️"},
+{name:"Demon Slayer",genre:"Action",emoji:"⚔️"},{name:"Jujutsu Kaisen",genre:"Fantaisie",emoji:"👊"},
+{name:"Haikyuu!!",genre:"Sport",emoji:"🏐"},{name:"Attack on Titan",genre:"Action",emoji:"🛡️"},
+{name:"My Hero Academia",genre:"Action",emoji:"🦸"},{name:"Black Clover",genre:"Fantaisie",emoji:"🍀"}
+];
+let currentUser=null, favorites=new Set();
+const $=s=>document.querySelector(s);
+function draw(){
+ const q=$('#search').value.toLowerCase(), g=$('#genre').value;
+ const items=anime.filter(a=>a.name.toLowerCase().includes(q)&&(!g||a.genre===g));
+ $('#grid').innerHTML=items.map(a=>`<article class="card"><div class="poster">${a.emoji}</div><div class="info"><b>${a.name}</b><br><small>${a.genre}</small></div></article>`).join('')||'<p>Aucun résultat.</p>';
+ $('#favorites').innerHTML=currentUser?[...favorites].map(n=>{let a=anime.find(x=>x.name===n);return `<article class="card"><div class="poster">${a.emoji}</div><div class="info"><b>${a.name}</b></div></article>`}).join('')||'<p class="muted">Aucun favori pour le moment.</p>':'<p class="muted">Connecte-toi pour gérer tes favoris.</p>';
+}
+$('#search').addEventListener('input',draw);$('#genre').addEventListener('change',draw);
+$('#authopen').onclick=()=>$('#authdlg').showModal();
+$('#signup').onclick=async()=>{if(!auth){$('#authmsg').textContent='Configuration Firebase manquante. Consulte le guide README.';return}try{await createUserWithEmailAndPassword(auth,$('#email').value,$('#password').value);$('#authdlg').close()}catch(e){$('#authmsg').textContent=humanError(e.code)}};
+$('#signin').onclick=async()=>{if(!auth){$('#authmsg').textContent='Configuration Firebase manquante. Consulte le guide README.';return}try{await signInWithEmailAndPassword(auth,$('#email').value,$('#password').value);$('#authdlg').close()}catch(e){$('#authmsg').textContent=humanError(e.code)}};
+$('#logout').onclick=()=>auth&&signOut(auth);
+function humanError(code){return ({'auth/invalid-email':'Adresse e-mail invalide.','auth/weak-password':'Mot de passe trop faible.','auth/email-already-in-use':'Cette adresse e-mail est déjà utilisée.','auth/invalid-credential':'E-mail ou mot de passe incorrect.','auth/network-request-failed':'Vérifie ta connexion Internet.'})[code]||'Une erreur est survenue. Vérifie les informations et réessaie.'}
+if(auth)onAuthStateChanged(auth,user=>{currentUser=user;$('#userlabel').textContent=user?user.email:'Non connecté';$('#authopen').hidden=!!user;$('#logout').hidden=!user;draw()});
+draw();
+</script>
+</body></html>
